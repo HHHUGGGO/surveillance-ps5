@@ -83,6 +83,8 @@ Pour désactiver cette détection, ajoutez l'option `--sans-catalogue`.
 | `--sans-bureau` | Pas de notification sur le bureau de l'ordinateur |
 | `--alerte-erreurs 5` | Alerte si une page reste illisible N fois de suite |
 | `--sans-catalogue` | Ne pas surveiller l'arrivée de nouvelles consoles |
+| `--notif-demarrage` | Envoie « ✅ Surveillance démarrée » après la première vérification |
+| `--battement 8,20` | Envoie « 🟢 Surveillance PS5 OK » chaque jour à ces heures (Paris). `--battement ""` pour désactiver |
 | `--test-notif` | Envoie une notification de test, puis s'arrête |
 
 ## Fonctionnement

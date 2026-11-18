@@ -53,6 +53,9 @@ C'est terminé. GitHub relance ensuite la surveillance **toutes les 30 minutes, 
 
 ## À savoir
 
+- **La surveillance tourne-t-elle toujours ?** Chaque jour vers **8 h** et vers **20 h** (heure de Paris), vous recevez « 🟢 Surveillance PS5 OK » avec le résultat de la dernière vérification. Elle part juste après une vraie vérification, en général dans les 5 minutes qui suivent l'heure. **Si elle n'arrive pas, c'est que la surveillance ne tourne plus** : regardez l'onglet Actions.
+- **Lancement manuel :** quand vous cliquez sur « Run workflow », vous recevez « ✅ Surveillance démarrée ». Cela confirme que GitHub, le secret `NTFY_SUJET` et votre téléphone fonctionnent ensemble.
+
 - **Nouvelles consoles :** vous êtes aussi prévenu quand une console est ajoutée à la page « Toutes les consoles PS5 » (notification « NOUVELLE CONSOLE »).
 
 - **Une seule notification par retour en stock.** Pour éviter les faux signaux, l'outil confirme d'abord la disponibilité deux fois, en une vingtaine de secondes.

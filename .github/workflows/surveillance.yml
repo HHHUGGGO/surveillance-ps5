@@ -39,7 +39,10 @@ jobs:
       - name: Surveiller (toutes les 5 min, ~29 min)
         env:
           NTFY_SUJET: ${{ secrets.NTFY_SUJET }}
-        run: python surveiller_ps5.py --duree 29 --intervalle 300 --sans-bureau
+          # Lancement manuel (« Run workflow ») : notification « Surveillance démarrée ».
+          DEMARRAGE: ${{ github.event_name == 'workflow_dispatch' && '--notif-demarrage' || '' }}
+        # « Tout va bien » envoyé chaque jour à 8 h et 20 h (heure de Paris).
+        run: python surveiller_ps5.py --duree 29 --intervalle 300 --sans-bureau --battement 8,20 $DEMARRAGE
 
       - name: Sauvegarder l'état
         if: always()

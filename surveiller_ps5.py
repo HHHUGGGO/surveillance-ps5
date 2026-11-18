@@ -204,21 +204,37 @@ def notif_bureau(titre: str, message: str) -> None:
         pass  # pas d'environnement graphique : tant pis, le terminal suffit
 
 
-def notif_ntfy(sujet: str, titre: str, message: str, lien: str | None, serveur: str) -> None:
-    en_tetes = {
-        "Title": titre.encode("utf-8").decode("latin-1", errors="ignore"),
-        "Priority": "urgent",
-        "Tags": "video_game,rotating_light",
-    }
+def notif_ntfy(sujet: str, titre: str, message: str, lien: str | None, serveur: str,
+               priorite: int = 5, tags: tuple = ("video_game", "rotating_light")) -> bool:
+    """Publication au format JSON (titre et message en UTF-8 sans souci d'encodage).
+    priorite : 1 (min) … 3 (normale) … 5 (urgente)."""
+    corps = {"topic": sujet, "title": titre, "message": message,
+             "priority": priorite, "tags": list(tags)}
     if lien:
-        en_tetes["Click"] = lien
+        corps["click"] = lien
     req = urllib.request.Request(
-        f"{serveur.rstrip('/')}/{sujet}", data=message.encode("utf-8"), headers=en_tetes, method="POST"
+        serveur.rstrip("/") + "/",
+        data=json.dumps(corps, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
     try:
         urllib.request.urlopen(req, timeout=20).read()
+        return True
     except (urllib.error.URLError, OSError) as e:
         journal(f"  ! échec ntfy : {e}")
+        return False
+
+
+def notif_info(args, titre: str, message: str, tags: tuple = ("white_check_mark",)) -> None:
+    """Notification d'information (démarrage, « tout va bien ») : ntfy seulement,
+    priorité normale, pas de bip ni d'e-mail."""
+    journal(f"ℹ️  {titre} — {message.splitlines()[0] if message else ''}")
+    if args.ntfy:
+        if notif_ntfy(args.ntfy, titre, message, URL_BOUTIQUE, args.ntfy_serveur, priorite=3, tags=tags):
+            journal("     (notification envoyée sur le téléphone)")
+    else:
+        journal("     (pas de sujet ntfy configuré : rien envoyé au téléphone)")
 
 
 def notif_email(titre: str, message: str) -> None:
@@ -370,6 +386,7 @@ def tour(args, urls: list[str], etat: dict) -> None:
     if not args.sans_catalogue:
         verifier_catalogue(args, etat)
     nb_dispo = 0
+    nb_erreurs = 0
     for i, url in enumerate(urls):
         if i:
             time.sleep(args.pause + random.random() * args.pause)  # rester discret
@@ -377,6 +394,7 @@ def tour(args, urls: list[str], etat: dict) -> None:
         try:
             info = verifier(url)
         except RuntimeError as e:
+            nb_erreurs += 1
             erreurs = precedent.get("erreurs", 0) + 1
             etat[url] = {**precedent, "erreurs": erreurs}
             journal(f"  ? {url}\n      erreur ({erreurs}x d'affilée) : {e}")
@@ -429,6 +447,58 @@ def tour(args, urls: list[str], etat: dict) -> None:
         }
         sauver_etat(etat)
     journal(f"Tour terminé : {nb_dispo}/{len(urls)} article(s) disponible(s).")
+    return {"total": len(urls), "dispo": nb_dispo, "erreurs": nb_erreurs,
+            "consoles": (etat.get("__catalogue__") or {}).get("total")}
+
+
+# --------------------------------------------------------------------------- #
+# Notifications « la surveillance tourne » (démarrage + 8 h / 20 h)
+# --------------------------------------------------------------------------- #
+
+def maintenant_local(fuseau: str) -> datetime:
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo(fuseau))
+    except Exception:  # Python < 3.9 ou base de fuseaux absente (Windows sans tzdata)
+        return datetime.now()
+
+
+def resume_tour(stats: dict, heure: datetime) -> str:
+    lignes = [f"{stats['total']} article(s) vérifié(s) à {heure:%H:%M} : "
+              f"{stats['dispo']} disponible(s)."]
+    if stats.get("consoles"):
+        lignes.append(f"{stats['consoles']} console(s) en vente sur le site.")
+    if stats["erreurs"]:
+        lignes.append(f"⚠️ {stats['erreurs']} page(s) illisible(s) à ce tour.")
+    else:
+        lignes.append("Aucune erreur.")
+    return "\n".join(lignes)
+
+
+def battement_si_heure(args, etat: dict, stats: dict) -> None:
+    """Envoie « tout va bien » une fois par créneau (ex. 8 h et 20 h), au premier tour
+    terminé après l'heure prévue (au plus tard 3 h après)."""
+    if not args.battement:
+        return
+    maintenant = maintenant_local(args.fuseau)
+    deja = etat.setdefault("__battements__", [])
+    for h in args.battement:
+        cle = f"{maintenant:%Y-%m-%d} {h:02d}h"
+        if h <= maintenant.hour < h + 3 and cle not in deja:
+            notif_info(args, f"🟢 Surveillance PS5 OK ({h} h)", resume_tour(stats, maintenant),
+                       tags=("green_circle",))
+            deja.append(cle)
+            del deja[:-10]  # ne garder que les derniers
+            sauver_etat(etat)
+
+
+def heures(texte: str) -> list[int]:
+    if not texte.strip():
+        return []
+    valeurs = sorted({int(x) for x in texte.replace(" ", "").split(",") if x})
+    if any(not 0 <= v <= 23 for v in valeurs):
+        raise argparse.ArgumentTypeError("heures entre 0 et 23, ex. 8,20")
+    return valeurs
 
 
 def main() -> None:
@@ -452,6 +522,12 @@ def main() -> None:
     p.add_argument("--alerte-erreurs", type=int, default=5,
                    help="alerter quand une page échoue N fois d'affilée (défaut 5)")
     p.add_argument("--test-notif", action="store_true", help="envoyer une notification de test et quitter")
+    p.add_argument("--notif-demarrage", action="store_true",
+                   help="envoyer « Surveillance démarrée » après le 1er tour (preuve que tout marche)")
+    p.add_argument("--battement", type=heures, default=heures("8,20"),
+                   help="heures (fuseau --fuseau) d'envoi d'un « tout va bien », ex. 8,20 ; "
+                        "chaîne vide pour désactiver (défaut 8,20)")
+    p.add_argument("--fuseau", default="Europe/Paris", help="fuseau horaire des heures de --battement")
     args = p.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -469,14 +545,20 @@ def main() -> None:
             + ("" if args.once else f", toutes les {intervalle // 60} min environ") + ".")
 
     fin = time.monotonic() + args.duree * 60 if args.duree > 0 else None
+    premier_tour = True
     while True:
         debut_tour = time.monotonic()
         try:
-            tour(args, urls, etat)
+            stats = tour(args, urls, etat)
+            if premier_tour and args.notif_demarrage:
+                notif_info(args, "✅ Surveillance PS5 démarrée",
+                           resume_tour(stats, maintenant_local(args.fuseau)))
+            battement_si_heure(args, etat, stats)
         except KeyboardInterrupt:
             raise
         except Exception as e:  # ne jamais arrêter la surveillance sur une erreur imprévue
             journal(f"Erreur inattendue : {e!r}")
+        premier_tour = False
         if args.once:
             break
         # L'intervalle se compte d'un début de tour au suivant (léger aléa de ±5 %).
