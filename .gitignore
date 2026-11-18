@@ -1,0 +1,6 @@
+etat_stock.json
+etat_stock.tmp
+__pycache__/
+*.zip
+/surveillance.yml
+surveillance.log

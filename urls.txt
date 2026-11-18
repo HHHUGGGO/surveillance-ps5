@@ -1,0 +1,15 @@
+# Une URL par ligne. Les lignes commençant par # sont ignorées.
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/ghost-of-yotei-limited-edition-bundle-gold/
+https://www.playstation.com/fr-fr/ps5/playstation-5-pro-console/product/PSD001-PSDE01847_03-PS5PROBASEB2ZIVE/
+https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/PSD001-PSDE01834_87-PS5DIGITAL3PVB7E/
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/playstation-5-console-model-group-slim/
+https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/ea-sports-fc-26-bundle/
+https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/fortnite-flowering-chaos-bundle/
+https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/astro-bot-bundle/
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/astro-bot-bundle/
+https://www.playstation.com/fr-fr/ps5/1-tb-disc/product/fortnite-flowering-chaos-bundle/
+https://www.playstation.com/fr-fr/ps5/1-tb-disc/product/ea-sports-fc-26-bundle/
+https://www.playstation.com/fr-fr/ps5/playStation5-digital-edition-call-of-duty-modern-warfare-II-bundle/product/call-of-duty-modern-warfare-ii-bundle/
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/call-of-duty-black-ops-6-bundle/
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/fortnite-cobalt-star-bundle/
+https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/30th-anniversary-limited-edition-bundle/
