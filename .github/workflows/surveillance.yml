@@ -1,8 +1,14 @@
 # Surveillance du stock PS5, 24 h/24, sur les serveurs gratuits de GitHub.
 #
-# Toutes les 30 minutes, GitHub lance une session qui vérifie les articles
-# toutes les 5 minutes pendant ~29 minutes, puis la session suivante prend le
-# relais. L'état (déjà en stock ou non) est conservé d'une session à l'autre.
+# Fonctionnement en RELAIS : chaque session vérifie les articles toutes les
+# 5 minutes pendant ~5 h 45, puis lance elle-même la session suivante juste
+# avant de se terminer (GitHub limite une session à 6 h). On ne dépend donc
+# pas des tâches programmées de GitHub, qui sont souvent retardées ou sautées.
+# La programmation ci-dessous ne sert que de filet de sécurité si la chaîne
+# se casse.
+#
+# Pour ARRÊTER : Actions > Surveillance stock PS5 > « ⋯ » > Disable workflow
+# (annuler une session avec « Cancel workflow » arrête aussi le relais).
 #
 # À configurer une seule fois : le secret NTFY_SUJET
 # (Settings > Secrets and variables > Actions > New repository secret).
@@ -11,17 +17,26 @@ name: Surveillance stock PS5
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
-  workflow_dispatch: {}   # bouton « Run workflow » pour lancer à la main
+    - cron: "23 */2 * * *"   # filet de sécurité : relance si la chaîne s'est cassée
+  workflow_dispatch:
+    inputs:
+      relais:
+        description: "Lancé automatiquement par la session précédente (laisser vide)"
+        required: false
+        default: ""
 
 concurrency:
   group: surveillance-ps5
-  cancel-in-progress: false
+  cancel-in-progress: false   # une seule session à la fois ; les suivantes attendent
+
+permissions:
+  contents: read
+  actions: write   # nécessaire pour lancer la session suivante
 
 jobs:
   surveiller:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 358   # maximum GitHub : 360
     steps:
       - uses: actions/checkout@v4
 
@@ -36,13 +51,13 @@ jobs:
           key: etat-${{ github.run_id }}
           restore-keys: etat-
 
-      - name: Surveiller (toutes les 5 min, ~29 min)
+      - name: Surveiller (toutes les 5 min, ~5 h 45)
         env:
           NTFY_SUJET: ${{ secrets.NTFY_SUJET }}
           # Lancement manuel (« Run workflow ») : notification « Surveillance démarrée ».
-          DEMARRAGE: ${{ github.event_name == 'workflow_dispatch' && '--notif-demarrage' || '' }}
+          DEMARRAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.relais != 'oui' && '--notif-demarrage' || '' }}
         # « Tout va bien » envoyé chaque jour à 8 h et 20 h (heure de Paris).
-        run: python surveiller_ps5.py --duree 29 --intervalle 300 --sans-bureau --battement 8,20 $DEMARRAGE
+        run: python surveiller_ps5.py --duree 345 --intervalle 300 --sans-bureau --battement 8,20 $DEMARRAGE
 
       - name: Sauvegarder l'état
         if: always()
@@ -50,3 +65,10 @@ jobs:
         with:
           path: etat_stock.json
           key: etat-${{ github.run_id }}
+
+      - name: Lancer la session suivante (relais)
+        # Pas de relais si la session a été annulée à la main : c'est ainsi qu'on l'arrête.
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run surveillance.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" -f relais=oui

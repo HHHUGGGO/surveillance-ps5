@@ -47,7 +47,9 @@ Comptez environ 15 minutes, une seule fois.
 3. Cliquez sur l'exécution qui démarre, puis sur l'étape **Surveiller** : vous devez voir la liste des articles avec ❌ ou ✅.
    - Si toutes les lignes affichent une **erreur**, le site PlayStation bloque peut-être les serveurs de GitHub. Dans ce cas, utilisez l'option B ci-dessous.
 
-C'est terminé. GitHub relance ensuite la surveillance **toutes les 30 minutes, jour et nuit**. Chaque session vérifie les articles **toutes les 5 minutes** pendant 29 minutes, puis la suivante prend le relais.
+C'est terminé. Chaque session vérifie les articles **toutes les 5 minutes** pendant environ 5 h 45, puis **lance elle-même la suivante** (relais), jour et nuit. Les tâches programmées de GitHub sont souvent retardées ou sautées : elles ne servent ici que de filet de sécurité, toutes les 2 heures, si la chaîne se casse.
+
+Dans l'onglet Actions, la session en cours a un rond jaune 🟡 pendant environ 5 h 45. La suivante apparaît « en attente », puis prend le relais. C'est normal.
 
 ---
 
@@ -62,7 +64,8 @@ C'est terminé. GitHub relance ensuite la surveillance **toutes les 30 minutes, 
 - **Petits trous possibles :** GitHub lance parfois les sessions programmées avec 5 à 15 minutes de retard aux heures chargées. La couverture est donc quasi continue, pas parfaite.
 - **60 jours d'inactivité :** GitHub met en pause les tâches programmées d'un dépôt public si personne n'y touche pendant 60 jours. Il envoie un e-mail avant, et il suffit de cliquer sur « Enable workflow » dans l'onglet Actions.
 - **Modifier la liste :** éditez `urls.txt` directement sur GitHub (icône crayon), avec une URL par ligne.
-- **Arrêter :** dans **Actions > Surveillance stock PS5**, cliquez sur **⋯ > Disable workflow**.
+- **Arrêter :** dans **Actions > Surveillance stock PS5**, cliquez sur **⋯ > Disable workflow**. Annuler la session en cours avec **Cancel workflow** arrête aussi le relais, mais le filet de sécurité la relancera dans les 2 heures, sauf si le workflow est désactivé.
+- **Redémarrer après un arrêt :** **Run workflow**. Vous recevez alors « ✅ Surveillance démarrée ».
 
 ---
 
