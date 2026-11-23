@@ -38,6 +38,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
@@ -69,6 +70,8 @@ LIBELLES = {
     "SOLD_OUT": "épuisé",
     "COMING_SOON": "bientôt disponible",
     "NOTIFY_ME": "non disponible",
+    "AUCHAN_EN_STOCK": "EN STOCK chez Auchan (Ajouter au panier)",
+    "AUCHAN_INDISPONIBLE": "indisponible chez Auchan (« Bientôt dispo »)",
 }
 
 
@@ -117,7 +120,45 @@ def _produits_jsonld(page: str):
 
 
 def analyser(page: str, url: str) -> dict:
-    """Extrait nom, prix et disponibilité. Lève ValueError si rien de fiable."""
+    """Extrait nom, prix et disponibilité selon le site. Lève ValueError si rien de fiable."""
+    hote = urllib.parse.urlsplit(url).hostname or ""
+    if hote.endswith("auchan.fr"):
+        return analyser_auchan(page, url)
+    return analyser_playstation(page, url)
+
+
+def analyser_auchan(page: str, url: str) -> dict:
+    """Auchan.fr : données « productUpdateDetail » intégrées à la page.
+    availability.status = true quand l'offre en ligne peut être ajoutée au panier."""
+    m = re.search(r"window\.G\.productUpdateDetail\s*=\s*", page)
+    if not m:
+        raise ValueError("données produit Auchan introuvables (page bloquée ou structure modifiée ?)")
+    try:
+        donnees, _ = json.JSONDecoder().raw_decode(page, m.end())
+    except ValueError:
+        raise ValueError("données produit Auchan illisibles")
+    produit = donnees.get("product") or {}
+    statut = (produit.get("availability") or {}).get("status")
+    if statut is None:
+        raise ValueError("disponibilité Auchan absente de la page")
+
+    nom = html.unescape(str(produit.get("name") or "?")).strip()
+    vendeur = str((produit.get("seller") or {}).get("name") or "")
+    if produit.get("marketplace") and vendeur and "auchan" not in vendeur.lower():
+        nom += f" (Auchan, vendu par {vendeur})"   # vendeur tiers : vérifier le prix !
+    else:
+        nom += " (Auchan)"
+    return {
+        "nom": nom,
+        "prix": (produit.get("price") or {}).get("displayed_tax"),
+        "devise": "EUR",
+        "dispo": "AUCHAN_EN_STOCK" if statut else "AUCHAN_INDISPONIBLE",
+        "disponible": bool(statut),
+    }
+
+
+def analyser_playstation(page: str, url: str) -> dict:
+    """PlayStation Direct : état du bouton d'achat (activeCtaId)."""
     produits = list(_produits_jsonld(page))
     if not produits:
         raise ValueError("aucune donnée produit (page bloquée ou structure modifiée ?)")
