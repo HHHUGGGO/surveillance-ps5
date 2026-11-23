@@ -69,6 +69,23 @@ Dans l'onglet Actions, la session en cours a un rond jaune 🟡 pendant environ 
 
 ---
 
+## Recevoir les alertes sur Telegram (recommandé si ntfy est capricieux)
+
+Les alertes partent sur ntfy **et** sur Telegram : vous pouvez garder les deux.
+
+1. Dans Telegram, ouvrez une conversation avec **@BotFather** (compte officiel, coche bleue).
+2. Envoyez `/newbot`, choisissez un nom (par exemple « Alerte PS5 »), puis un identifiant qui finit par `bot` (par exemple `alerte_ps5_xyz_bot`).
+3. BotFather répond avec un **jeton** du genre `123456789:AAH...`. Gardez-le secret : il donne le contrôle du bot.
+4. Ouvrez la conversation avec **votre** bot (lien donné par BotFather) et appuyez sur **Démarrer**, ou envoyez `/start`. Sans ce message, le bot n'a pas le droit de vous écrire.
+5. Récupérez votre **identifiant de conversation** : ouvrez dans un navigateur
+   `https://api.telegram.org/bot<VOTRE_JETON>/getUpdates` (en remplaçant `<VOTRE_JETON>`). Cherchez `"chat":{"id":` : le nombre qui suit, par exemple `123456789`, est votre identifiant.
+6. Sur GitHub, dans **Settings > Secrets and variables > Actions > New repository secret**, créez deux secrets :
+   - `TELEGRAM_TOKEN` = le jeton de l'étape 3 ;
+   - `TELEGRAM_CHAT_ID` = l'identifiant de l'étape 5.
+7. Testez : **Actions > Surveillance stock PS5 > Run workflow**. Le message « ✅ Surveillance PS5 démarrée » arrive dans Telegram, et le journal indique « notification envoyée : ntfy, Telegram ».
+
+---
+
 ## Option B : sur une machine allumée en permanence
 
 Utilisez cette option si vous avez un Raspberry Pi, un vieux PC ou un serveur, ou si GitHub est bloqué par le site.

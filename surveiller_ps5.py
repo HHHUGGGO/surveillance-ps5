@@ -267,15 +267,53 @@ def notif_ntfy(sujet: str, titre: str, message: str, lien: str | None, serveur: 
         return False
 
 
+def telegram_configure() -> bool:
+    return bool(os.environ.get("TELEGRAM_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"))
+
+
+def notif_telegram(titre: str, message: str, lien: str | None = None) -> bool:
+    """Message Telegram via un bot (variables TELEGRAM_TOKEN et TELEGRAM_CHAT_ID)."""
+    jeton = os.environ.get("TELEGRAM_TOKEN", "").strip()
+    chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not (jeton and chat):
+        return False
+    texte = f"<b>{html.escape(titre)}</b>\n{html.escape(message)}"
+    if lien and lien not in message:
+        texte += f"\n{html.escape(lien)}"
+    api = os.environ.get("TELEGRAM_API", "https://api.telegram.org").rstrip("/")
+    req = urllib.request.Request(
+        f"{api}/bot{jeton}/sendMessage",
+        data=json.dumps({"chat_id": chat, "text": texte[:4000], "parse_mode": "HTML",
+                         "disable_web_page_preview": True}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=20).read()
+        return True
+    except urllib.error.HTTPError as e:
+        # Le jeton n'apparaît jamais dans le journal.
+        detail = e.read().decode("utf-8", "replace")[:200]
+        journal(f"  ! échec Telegram : HTTP {e.code} {detail}")
+    except (urllib.error.URLError, OSError) as e:
+        journal(f"  ! échec Telegram : {getattr(e, 'reason', e)}")
+    return False
+
+
 def notif_info(args, titre: str, message: str, tags: tuple = ("white_check_mark",)) -> None:
-    """Notification d'information (démarrage, « tout va bien ») : ntfy seulement,
-    priorité normale, pas de bip ni d'e-mail."""
+    """Notification d'information (démarrage, « tout va bien ») : ntfy (priorité
+    normale) et Telegram, pas de bip ni d'e-mail."""
     journal(f"ℹ️  {titre} — {message.splitlines()[0] if message else ''}")
-    if args.ntfy:
-        if notif_ntfy(args.ntfy, titre, message, URL_BOUTIQUE, args.ntfy_serveur, priorite=3, tags=tags):
-            journal("     (notification envoyée sur le téléphone)")
+    envoyes = []
+    if args.ntfy and notif_ntfy(args.ntfy, titre, message, URL_BOUTIQUE, args.ntfy_serveur,
+                                priorite=3, tags=tags):
+        envoyes.append("ntfy")
+    if notif_telegram(titre, message):
+        envoyes.append("Telegram")
+    if envoyes:
+        journal(f"     (notification envoyée : {', '.join(envoyes)})")
     else:
-        journal("     (pas de sujet ntfy configuré : rien envoyé au téléphone)")
+        journal("     (aucun canal configuré ou envoi échoué : rien envoyé au téléphone)")
 
 
 def notif_email(titre: str, message: str) -> None:
@@ -312,6 +350,7 @@ def alerter(args, titre: str, message: str, lien: str | None = None) -> None:
         notif_bureau(titre, message)
     if args.ntfy:
         notif_ntfy(args.ntfy, titre, message, lien, args.ntfy_serveur)
+    notif_telegram(f"🚨 {titre}", message, lien)
     notif_email(titre, message)
 
 

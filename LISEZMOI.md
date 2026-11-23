@@ -45,6 +45,10 @@ python surveiller_ps5.py --ntfy ps5-alerte-x7k2q9
 
 Quand vous touchez la notification, la page du produit s'ouvre directement.
 
+## Alerte Telegram (optionnel)
+
+Définissez `TELEGRAM_TOKEN` (le jeton du bot créé avec @BotFather) et `TELEGRAM_CHAT_ID` (votre identifiant de conversation). La procédure complète est dans `GUIDE_24H_ET_TELEPHONE.md`.
+
 ## Alerte par e-mail (optionnel)
 
 Définissez ces variables d'environnement avant de lancer le script. L'exemple ci-dessous est pour Gmail, avec un « mot de passe d'application ».

@@ -54,6 +54,8 @@ jobs:
       - name: Surveiller (toutes les 5 min, ~5 h 45)
         env:
           NTFY_SUJET: ${{ secrets.NTFY_SUJET }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # Lancement manuel (« Run workflow ») : notification « Surveillance démarrée ».
           DEMARRAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.relais != 'oui' && '--notif-demarrage' || '' }}
         # « Tout va bien » envoyé chaque jour à 8 h et 20 h (heure de Paris).
