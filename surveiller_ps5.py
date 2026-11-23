@@ -222,7 +222,18 @@ def prix_en_nombre(prix) -> float | None:
         return None
 
 
+EDITION_SPECIALE = re.compile(r"[ée]dition\s+limit[ée]e|limited\s+edition|anniversaire|collector", re.I)
+
+
+def est_edition_speciale(nom: str) -> bool:
+    return bool(EDITION_SPECIALE.search(nom))
+
+
 def budget_pour(nom: str) -> float:
+    """Plafond applicable (0 = aucun). Les éditions spéciales/limitées ne sont
+    jamais bloquées par le budget."""
+    if est_edition_speciale(nom):
+        return 0.0
     return BUDGET["pro"] if re.search(r"\bPro\b", nom) else BUDGET["ps5"]
 
 

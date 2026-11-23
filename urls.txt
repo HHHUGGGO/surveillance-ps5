@@ -1,5 +1,6 @@
 # Une URL par ligne. Les lignes commençant par # sont ignorées.
-# Budget : PS5 ≤ 550 €, PS5 Pro ≤ 900 € (hors éditions spéciales).
+# Budget : PS5 ≤ 550 €, PS5 Pro ≤ 900 €. Les éditions spéciales/limitées sont
+# surveillées quel que soit leur prix.
 # Les alertes au-dessus de ces prix sont bloquées par --budget-ps5 / --budget-pro.
 https://www.playstation.com/fr-fr/ps5/playstation-5-pro-console/product/PSD001-PSDE01847_03-PS5PROBASEB2ZIVE/
 https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/PSD001-PSDE01834_87-PS5DIGITAL3PVB7E/
@@ -35,3 +36,8 @@ https://www.auchan.fr/sony-pack-console-playstation-5-pro-2-to-ea-sports-fc-26/p
 https://www.auchan.fr/sony-pack-console-edition-numerique-playstation-5-e-chassis-ea-sports-fc-26/pr-C1851751
 https://www.auchan.fr/sony-pack-console-playstation-5-1-to-ea-sports-fc-26/pr-C1851741
 https://www.auchan.fr/pack-console-ps5-slim-edition-digitale-marvel-s-spider-man-2/pr-C1784609
+
+# --- Éditions spéciales (alertes quel que soit le prix) ---
+https://www.playstation.com/fr-fr/ps5/playstation-5-pro-console/product/PSD001-PSDE01847_03-PS5PROBASEKUEUNE/
+https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/ghost-of-yotei-limited-edition-bundle-gold/
+https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/marvels-wolverine-battle-yellow-limited-edition-bundle/
