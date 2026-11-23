@@ -89,6 +89,8 @@ Pour désactiver cette détection, ajoutez l'option `--sans-catalogue`.
 | `--sans-catalogue` | Ne pas surveiller l'arrivée de nouvelles consoles |
 | `--notif-demarrage` | Envoie « ✅ Surveillance démarrée » après la première vérification |
 | `--battement 8,20` | Envoie « 🟢 Surveillance PS5 OK » chaque jour à ces heures (Paris). `--battement ""` pour désactiver |
+| `--budget-ps5 550` | Pas d'alerte pour une PS5 (hors Pro) vendue plus de 550 € |
+| `--budget-pro 900` | Pas d'alerte pour une PS5 Pro vendue plus de 900 € |
 | `--test-notif` | Envoie une notification de test, puis s'arrête |
 
 ## Fonctionnement

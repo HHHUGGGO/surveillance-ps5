@@ -1,5 +1,6 @@
 # Une URL par ligne. Les lignes commençant par # sont ignorées.
-https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/ghost-of-yotei-limited-edition-bundle-gold/
+# Budget : PS5 ≤ 550 €, PS5 Pro ≤ 900 € (hors éditions spéciales).
+# Les alertes au-dessus de ces prix sont bloquées par --budget-ps5 / --budget-pro.
 https://www.playstation.com/fr-fr/ps5/playstation-5-pro-console/product/PSD001-PSDE01847_03-PS5PROBASEB2ZIVE/
 https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/PSD001-PSDE01834_87-PS5DIGITAL3PVB7E/
 https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/playstation-5-console-model-group-slim/
@@ -17,19 +18,10 @@ https://www.auchan.fr/sony-console-playstation-5-pro/pr-C1824137
 
 # --- PlayStation Direct : consoles seules ---
 https://www.playstation.com/fr-fr/ps5/ps5-pro/buy-now/product/PSD001-PSDE01942_39-PS5PROCHASASIRSE/
-https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/PSD001-PSDE01916_79-PS5DIGITALKKBAEE/
-https://www.playstation.com/fr-fr/ps5/1-tb-disc/product/PSD001-PSDE01929_59-PS5CONSOLEHB2OYE/
-https://www.playstation.com/fr-fr/ps5/playstation-5-pro-console/product/PSD001-PSDE01847_03-PS5PROBASEKUEUNE/
 
 # --- PlayStation Direct : packs ---
-https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/marvels-wolverine-battle-yellow-limited-edition-bundle/
 https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/fortnite-cobalt-star-bundle/
 https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/call-of-duty-black-ops-6-bundle/
-https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/playstation-5-console-playstation-plus-premium-24-month-subscription-bundle/
-https://www.playstation.com/fr-fr/ps5/digital-edition-825-gb/product/digital-edition-825-gb-two-dualsense-bundle/
-https://www.playstation.com/fr-fr/ps5/1-tb-disc/product/two-dualsense-wireless-controllers-bundle/
-https://www.playstation.com/fr-fr/ps5/ghost-of-yotei-limited-edition-bundle-black/product/playstation-5-console-two-dualsense-wireless-controllers-bundle/
-https://www.playstation.com/fr-fr/ps5/playstation-digital-edition-console-model-group-slim/product/playstation-5-digital-edition-two-dualsense-wireless-controllers-bundle/
 
 # --- PlayStation Direct : reconditionné certifié par Sony ---
 https://www.playstation.com/fr-fr/ps5/certified-refurbished-playstation-5-pro-console/product/PSD001-PSDE00356_47-RECERTIFIE3YQNSE/
@@ -43,4 +35,3 @@ https://www.auchan.fr/sony-pack-console-playstation-5-pro-2-to-ea-sports-fc-26/p
 https://www.auchan.fr/sony-pack-console-edition-numerique-playstation-5-e-chassis-ea-sports-fc-26/pr-C1851751
 https://www.auchan.fr/sony-pack-console-playstation-5-1-to-ea-sports-fc-26/pr-C1851741
 https://www.auchan.fr/pack-console-ps5-slim-edition-digitale-marvel-s-spider-man-2/pr-C1784609
-https://www.auchan.fr/sony-pack-console-playstation-5-call-of-duty-modern-warfare-ii/pr-C1745270

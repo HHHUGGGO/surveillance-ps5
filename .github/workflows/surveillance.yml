@@ -58,8 +58,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # Lancement manuel (« Run workflow ») : notification « Surveillance démarrée ».
           DEMARRAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.relais != 'oui' && '--notif-demarrage' || '' }}
-        # « Tout va bien » envoyé chaque jour à 8 h et 20 h (heure de Paris).
-        run: python surveiller_ps5.py --duree 345 --intervalle 300 --sans-bureau --battement 8,20 $DEMARRAGE
+        # « Tout va bien » chaque jour à 8 h et 20 h (heure de Paris).
+        # Budget : pas d'alerte au-dessus de 550 € (PS5) / 900 € (PS5 Pro).
+        run: python surveiller_ps5.py --duree 345 --intervalle 300 --sans-bureau --battement 8,20 --budget-ps5 550 --budget-pro 900 $DEMARRAGE
 
       - name: Sauvegarder l'état
         if: always()

@@ -203,11 +203,46 @@ def analyser_playstation(page: str, url: str) -> dict:
     }
 
 
+# Budget maximum (0 = pas de limite), fixé par --budget-ps5 / --budget-pro.
+BUDGET = {"ps5": 0.0, "pro": 0.0}
+
+
+def prix_en_nombre(prix) -> float | None:
+    """'349.99', 799.99, '€649,99', '1 099,99 €' -> float ; None si inconnu."""
+    if prix in (None, ""):
+        return None
+    if isinstance(prix, (int, float)):
+        return float(prix)
+    texte = re.sub(r"[^\d,.]", "", str(prix))
+    if "," in texte:
+        texte = texte.replace(".", "").replace(",", ".")
+    try:
+        return float(texte)
+    except ValueError:
+        return None
+
+
+def budget_pour(nom: str) -> float:
+    return BUDGET["pro"] if re.search(r"\bPro\b", nom) else BUDGET["ps5"]
+
+
+def appliquer_budget(info: dict) -> dict:
+    """Un article en stock mais trop cher est traité comme indisponible : aucune
+    alerte, mais une alerte si son prix redescend dans le budget. Prix inconnu :
+    on alerte quand même (à vérifier)."""
+    plafond = budget_pour(info["nom"])
+    prix = prix_en_nombre(info.get("prix"))
+    if info["disponible"] and plafond and prix is not None and prix > plafond:
+        info["disponible"] = False
+        info["hors_budget"] = True
+    return info
+
+
 def verifier(url: str, essais: int = 3) -> dict:
     derniere_erreur = None
     for tentative in range(1, essais + 1):
         try:
-            return analyser(telecharger(url), url)
+            return appliquer_budget(analyser(telecharger(url), url))
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
             derniere_erreur = e
             if tentative < essais:
@@ -442,13 +477,18 @@ def verifier_catalogue(args, etat: dict) -> None:
 
     vus = precedent.get("vus", {})
     nouveaux = {pid: p for pid, p in produits.items() if pid not in vus}
+    trop_chers = {pid: p for pid, p in nouveaux.items()
+                  if budget_pour(p["nom"]) and (prix_en_nombre(p["prix"]) or 0) > budget_pour(p["nom"])}
+    for p in trop_chers.values():
+        journal(f"  📋 Nouvelle console au-dessus du budget, ignorée : {p['nom']} — {p['prix']}")
+    nouveaux = {pid: p for pid, p in nouveaux.items() if pid not in trop_chers}
     ancien_total = precedent.get("total")
 
     if nouveaux:
         lignes = "\n".join(f"• {p['nom']} — {p['prix']}" for p in nouveaux.values())
         alerter(args, f"NOUVELLE CONSOLE sur PlayStation Direct ({len(nouveaux)})",
                 f"{lignes}\n{URL_BOUTIQUE}", URL_BOUTIQUE)
-    elif total and ancien_total and total > ancien_total:
+    elif total and ancien_total and total > ancien_total and len(trop_chers) < total - ancien_total:
         alerter(args, "NOUVELLE CONSOLE sur PlayStation Direct",
                 f"Le nombre de consoles est passé de {ancien_total} à {total}.\n"
                 f"Elle n'est pas dans le haut de la liste : ouvrez la page et cliquez sur « Afficher plus ».\n"
@@ -502,7 +542,9 @@ def tour(args, urls: list[str], etat: dict) -> None:
                 info = confirmation
 
         libelle = LIBELLES.get(info["dispo"], info["dispo"])
-        marque = "✅" if info["disponible"] else "❌"
+        if info.get("hors_budget"):
+            libelle += f" — mais au-dessus du budget ({budget_pour(info['nom']):.0f} €), pas d'alerte"
+        marque = "✅" if info["disponible"] else ("💸" if info.get("hors_budget") else "❌")
         journal(f"  {marque} {info['nom']} — {format_prix(info)} — {libelle}")
         if info["disponible"]:
             nb_dispo += 1
@@ -608,6 +650,10 @@ def main() -> None:
                    help="heures (fuseau --fuseau) d'envoi d'un « tout va bien », ex. 8,20 ; "
                         "chaîne vide pour désactiver (défaut 8,20)")
     p.add_argument("--fuseau", default="Europe/Paris", help="fuseau horaire des heures de --battement")
+    p.add_argument("--budget-ps5", type=float, default=0,
+                   help="prix maximum (€) pour une PS5 hors Pro : au-delà, pas d'alerte (0 = pas de limite)")
+    p.add_argument("--budget-pro", type=float, default=0,
+                   help="prix maximum (€) pour une PS5 Pro : au-delà, pas d'alerte (0 = pas de limite)")
     args = p.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -618,6 +664,7 @@ def main() -> None:
                 "https://www.playstation.com/fr-fr/")
         return
 
+    BUDGET["ps5"], BUDGET["pro"] = args.budget_ps5, args.budget_pro
     urls = charger_urls()
     etat = charger_etat()
     intervalle = max(60, args.intervalle)
