@@ -72,6 +72,8 @@ LIBELLES = {
     "NOTIFY_ME": "non disponible",
     "AUCHAN_EN_STOCK": "EN STOCK chez Auchan (Ajouter au panier)",
     "AUCHAN_INDISPONIBLE": "indisponible chez Auchan (« Bientôt dispo »)",
+    "LECLERC_EN_STOCK": "EN STOCK chez Leclerc",
+    "LECLERC_INDISPONIBLE": "indisponible chez Leclerc",
 }
 
 
@@ -124,7 +126,58 @@ def analyser(page: str, url: str) -> dict:
     hote = urllib.parse.urlsplit(url).hostname or ""
     if hote.endswith("auchan.fr"):
         return analyser_auchan(page, url)
+    if hote.endswith("e.leclerc"):
+        return analyser_leclerc(page, url)
     return analyser_playstation(page, url)
+
+
+def analyser_leclerc(page: str, url: str) -> dict:
+    """E.Leclerc : données schema.org Product. La 1re offre est la meilleure offre
+    affichée (prix, vendeur, disponibilité) ; AggregateOffer donne le prix le plus bas."""
+    produits = list(_produits_jsonld(page))
+    if not produits:
+        # Fiche valide mais sans aucune offre en ce moment : pas de données produit.
+        titre = re.search(r"<title>([^<]+?)\s*(?:au meilleur prix)?\s*\|\s*E\.Leclerc\s*</title>", page)
+        if titre:
+            return {"nom": html.unescape(titre.group(1)).strip() + " (Leclerc)", "prix": None,
+                    "devise": "EUR", "dispo": "LECLERC_INDISPONIBLE", "disponible": False}
+        raise ValueError("données produit Leclerc introuvables (page bloquée ou structure modifiée ?)")
+    produit = produits[0]
+    offres = produit.get("offers") or []
+    if isinstance(offres, dict):
+        offres = [offres]
+    simples = [o for o in offres if isinstance(o, dict) and o.get("@type") == "Offer"]
+    groupe = next((o for o in offres if isinstance(o, dict) and o.get("@type") == "AggregateOffer"), {})
+
+    en_stock = [o for o in simples if str(o.get("availability", "")).endswith(("InStock", "LimitedAvailability",
+                                                                                "PreOrder", "OnlineOnly"))]
+    meilleure = min(en_stock, key=lambda o: prix_en_nombre(o.get("price")) or 1e9) if en_stock else None
+    nom = html.unescape(str(produit.get("name") or "?")).strip()
+    nb = groupe.get("offerCount")
+
+    tiers = False
+    if meilleure:
+        vendeur = str((meilleure.get("seller") or {}).get("name") or "")
+        tiers = bool(vendeur and "leclerc" not in vendeur.lower())
+        if tiers:
+            nom += f" (Leclerc, vendu par {vendeur}{f', {nb} offres' if nb and int(nb) > 1 else ''})"
+        else:
+            nom += " (Leclerc)"
+        prix = meilleure.get("price")
+        plus_bas = prix_en_nombre(groupe.get("lowPrice"))
+        if plus_bas is not None and (prix_en_nombre(prix) is None or plus_bas < prix_en_nombre(prix)):
+            prix = plus_bas   # une autre offre est moins chère que celle mise en avant
+    else:
+        nom += " (Leclerc)"
+        prix = (simples[0].get("price") if simples else None) or groupe.get("lowPrice")
+    return {
+        "nom": nom,
+        "prix": prix,
+        "devise": "EUR",
+        "vendeur_tiers": tiers,
+        "dispo": "LECLERC_EN_STOCK" if meilleure else "LECLERC_INDISPONIBLE",
+        "disponible": bool(meilleure),
+    }
 
 
 def analyser_auchan(page: str, url: str) -> dict:
@@ -144,11 +197,13 @@ def analyser_auchan(page: str, url: str) -> dict:
 
     nom = html.unescape(str(produit.get("name") or "?")).strip()
     vendeur = str((produit.get("seller") or {}).get("name") or "")
-    if produit.get("marketplace") and vendeur and "auchan" not in vendeur.lower():
+    tiers = bool(produit.get("marketplace") and vendeur and "auchan" not in vendeur.lower())
+    if tiers:
         nom += f" (Auchan, vendu par {vendeur})"   # vendeur tiers : vérifier le prix !
     else:
         nom += " (Auchan)"
     return {
+        "vendeur_tiers": tiers,
         "nom": nom,
         "prix": (produit.get("price") or {}).get("displayed_tax"),
         "devise": "EUR",
@@ -229,10 +284,11 @@ def est_edition_speciale(nom: str) -> bool:
     return bool(EDITION_SPECIALE.search(nom))
 
 
-def budget_pour(nom: str) -> float:
-    """Plafond applicable (0 = aucun). Les éditions spéciales/limitées ne sont
-    jamais bloquées par le budget."""
-    if est_edition_speciale(nom):
+def budget_pour(nom: str, vendeur_tiers: bool = False) -> float:
+    """Plafond applicable (0 = aucun). Les éditions spéciales/limitées vendues par
+    un vendeur officiel (Sony, Auchan, Leclerc) ne sont jamais bloquées par le budget ;
+    chez un revendeur tiers de marketplace, le budget s'applique toujours."""
+    if est_edition_speciale(nom) and not vendeur_tiers:
         return 0.0
     return BUDGET["pro"] if re.search(r"\bPro\b", nom) else BUDGET["ps5"]
 
@@ -241,7 +297,7 @@ def appliquer_budget(info: dict) -> dict:
     """Un article en stock mais trop cher est traité comme indisponible : aucune
     alerte, mais une alerte si son prix redescend dans le budget. Prix inconnu :
     on alerte quand même (à vérifier)."""
-    plafond = budget_pour(info["nom"])
+    plafond = budget_pour(info["nom"], info.get("vendeur_tiers", False))
     prix = prix_en_nombre(info.get("prix"))
     if info["disponible"] and plafond and prix is not None and prix > plafond:
         info["disponible"] = False
@@ -554,7 +610,7 @@ def tour(args, urls: list[str], etat: dict) -> None:
 
         libelle = LIBELLES.get(info["dispo"], info["dispo"])
         if info.get("hors_budget"):
-            libelle += f" — mais au-dessus du budget ({budget_pour(info['nom']):.0f} €), pas d'alerte"
+            libelle += f" — mais au-dessus du budget ({budget_pour(info['nom'], info.get('vendeur_tiers', False)):.0f} €), pas d'alerte"
         marque = "✅" if info["disponible"] else ("💸" if info.get("hors_budget") else "❌")
         journal(f"  {marque} {info['nom']} — {format_prix(info)} — {libelle}")
         if info["disponible"]:

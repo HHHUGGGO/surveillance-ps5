@@ -98,7 +98,9 @@ Pour désactiver cette détection, ajoutez l'option `--sans-catalogue`.
 - **Une seule alerte par retour en stock.** Le script ne vous relance pas tant que l'article reste disponible. S'il repasse en rupture puis revient, vous êtes de nouveau prévenu.
 - L'état est mémorisé dans `etat_stock.json`. Vous pouvez arrêter et relancer le script sans recevoir de fausses alertes.
 - Pour ajouter ou retirer un article, modifiez `urls.txt` (une URL par ligne).
-- Sites pris en charge : **playstation.com/fr-fr** (PlayStation Direct) et **auchan.fr**.
+- Sites pris en charge : **playstation.com/fr-fr** (PlayStation Direct), **auchan.fr** et **e.leclerc**.
+- Fnac, Darty, Boulanger, Carrefour, Micromania, Cdiscount, Amazon et Cultura bloquent les robots (pages anti-robot) : ils ne sont pas pris en charge.
+- Les **revendeurs tiers** des marketplaces (Auchan, Leclerc) sont toujours soumis au budget, même pour une édition limitée.
 - Chez Auchan, l'article compte comme disponible quand l'offre en ligne peut être ajoutée au panier. Si elle vient d'un **vendeur tiers** de la marketplace, l'alerte l'indique (« vendu par … ») : vérifiez le prix avant d'acheter.
 - Une pause de quelques secondes sépare les pages pour ne pas surcharger le site. **Ne descendez pas sous 2 minutes d'intervalle** : le site pourrait bloquer votre adresse IP.
 
